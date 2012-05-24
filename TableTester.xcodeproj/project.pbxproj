@@ -243,7 +243,6 @@
 				GCC_PREFIX_HEADER = "TableTester/TableTester-Prefix.pch";
 				INFOPLIST_FILE = "TableTester/TableTester-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos.internal;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -255,7 +254,6 @@
 				GCC_PREFIX_HEADER = "TableTester/TableTester-Prefix.pch";
 				INFOPLIST_FILE = "TableTester/TableTester-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos.internal;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;

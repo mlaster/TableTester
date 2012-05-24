@@ -20,6 +20,6 @@
 @property (nonatomic, strong) NSArray *dynamicList;
 
 - (IBAction)change:(id)sender;
-- (void)animateUpdateFromOldList:(NSArray *)oldList newList:(NSArray *)newList;
+- (void)animateTableViewUpdate:(UITableView *)inTableView FromOldList:(NSArray *)oldList newList:(NSArray *)newList comparisionKey:(NSString *)inKey;
 
 @end

@@ -18,10 +18,27 @@
     [super viewDidLoad];
     self.beforeList = [NSArray arrayWithObjects:
                        [NSDictionary dictionaryWithObjectsAndKeys:@"1", @"key", @"One", @"name", nil],
+                       [NSDictionary dictionaryWithObjectsAndKeys:@"2", @"key", @"Two", @"name", nil],
+                       [NSDictionary dictionaryWithObjectsAndKeys:@"3", @"key", @"Three", @"name", nil],
+                       [NSDictionary dictionaryWithObjectsAndKeys:@"4", @"key", @"Four", @"name", nil],
+                       [NSDictionary dictionaryWithObjectsAndKeys:@"5", @"key", @"Five", @"name", nil],
+                       [NSDictionary dictionaryWithObjectsAndKeys:@"6", @"key", @"Six", @"name", nil],
+                       [NSDictionary dictionaryWithObjectsAndKeys:@"7", @"key", @"Seven", @"name", nil],
+                       [NSDictionary dictionaryWithObjectsAndKeys:@"8", @"key", @"Eight", @"name", nil],
+                       [NSDictionary dictionaryWithObjectsAndKeys:@"9", @"key", @"Nine", @"name", nil],
+                       [NSDictionary dictionaryWithObjectsAndKeys:@"10", @"key", @"Ten", @"name", nil],
                        nil];
     self.afterList = [NSArray arrayWithObjects:
-                       [NSDictionary dictionaryWithObjectsAndKeys:@"1", @"key", @"One", @"name", nil],
-                       [NSDictionary dictionaryWithObjectsAndKeys:@"2", @"key", @"Two", @"name", nil],
+//                      [NSDictionary dictionaryWithObjectsAndKeys:@"1", @"key", @"One", @"name", nil],
+//                      [NSDictionary dictionaryWithObjectsAndKeys:@"3", @"key", @"Three", @"name", nil],
+//                      [NSDictionary dictionaryWithObjectsAndKeys:@"5", @"key", @"Five", @"name", nil],
+//                      [NSDictionary dictionaryWithObjectsAndKeys:@"7", @"key", @"Seven", @"name", nil],
+//                      [NSDictionary dictionaryWithObjectsAndKeys:@"9", @"key", @"Nine", @"name", nil],
+                      [NSDictionary dictionaryWithObjectsAndKeys:@"10", @"key", @"Ten", @"name", nil],
+                      [NSDictionary dictionaryWithObjectsAndKeys:@"8", @"key", @"Eight", @"name", nil],
+                      [NSDictionary dictionaryWithObjectsAndKeys:@"6", @"key", @"Six", @"name", nil],
+                      [NSDictionary dictionaryWithObjectsAndKeys:@"4", @"key", @"Four", @"name", nil],
+                      [NSDictionary dictionaryWithObjectsAndKeys:@"2", @"key", @"Two", @"name", nil],
                        nil];
     self.dynamicList = [NSArray array];
     
@@ -30,7 +47,7 @@
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     self.dynamicList = [self.beforeList copy];
-    [self animateUpdateFromOldList:[NSArray array] newList:self.beforeList];
+    [self animateTableViewUpdate:self.dynamicTableView FromOldList:[NSArray array] newList:self.beforeList comparisionKey:@"key"];
 }
 
 - (void)didReceiveMemoryWarning
@@ -51,22 +68,36 @@
         NSLog(@"Changing to After");
         [sender setTitle:@"After" forState:UIControlStateNormal];
         self.dynamicList = [self.afterList copy];
-        [self animateUpdateFromOldList:oldList newList:self.afterList];
+        [self animateTableViewUpdate:self.dynamicTableView FromOldList:oldList newList:self.afterList comparisionKey:@"key"];
     } else {
+        NSArray *oldList = [self.dynamicList copy];
+
         NSLog(@"Changing to Before");
         [sender setTitle:@"Before" forState:UIControlStateNormal];
-        [self animateUpdateFromOldList:self.dynamicList newList:self.beforeList];
         self.dynamicList = [self.beforeList copy];
+        [self animateTableViewUpdate:self.dynamicTableView FromOldList:oldList newList:self.beforeList comparisionKey:@"key"];
     }
 }
 
-- (void)animateUpdateFromOldList:(NSArray *)oldList newList:(NSArray *)newList {
-    NSMutableArray *workArray = [oldList mutableCopy];
-    NSMutableSet *oldSet = [[NSMutableSet alloc] initWithArray:oldList];
-    NSMutableSet *newSet = [[NSMutableSet alloc] initWithArray:newList];
+- (void)animateTableViewUpdate:(UITableView *)inTableView FromOldList:(NSArray *)oldList newList:(NSArray *)newList comparisionKey:(NSString *)inKey {
+    NSMutableDictionary *oldMap = [NSMutableDictionary dictionary];
+    NSMutableDictionary *newMap = [NSMutableDictionary dictionary];
+    NSMutableSet *oldSet = [NSMutableSet set];
+    NSMutableSet *newSet = [NSMutableSet set];
     NSMutableSet *deleteSet = nil;
     NSMutableSet *insertSet = nil;
     static NSInteger offset = 0;
+
+    [oldList enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
+        [oldMap setObject:obj forKey:[obj valueForKey:inKey]];
+    }];
+
+    [newList enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
+        [newMap setObject:obj forKey:[obj valueForKey:inKey]];
+    }];
+
+    [oldSet addObjectsFromArray:[oldMap allKeys]];
+    [newSet addObjectsFromArray:[newMap allKeys]];
     
     deleteSet = [oldSet mutableCopy];
     [deleteSet minusSet:newSet];
@@ -74,44 +105,50 @@
     insertSet = [newSet mutableCopy];
     [insertSet minusSet:oldSet];
 
-    NSLog(@"oldList.count: %d  newList.count: %d", [oldList count], [newList count]);
-    [self.dynamicTableView beginUpdates];
-    
-    // Process deletes
-    for (NSDictionary *deletedObject in deleteSet) {
-        NSUInteger index = [oldList indexOfObject:deletedObject];
-        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:(NSInteger)index + offset inSection:0];
-        [workArray removeObjectAtIndex:index];
-        NSLog(@"DELETE row at %@", [NSArray arrayWithObject:indexPath]);
-        [self.dynamicTableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
-    }
-    
-    // Process inserts
-    for (NSDictionary *insertObject in insertSet) {
-        NSUInteger index = [newList indexOfObject:insertObject];
-        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:(NSInteger)index + offset inSection:0];
-        NSLog(@"INSERT row at %@", [NSArray arrayWithObject:indexPath]);
-        [self.dynamicTableView insertRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
-    }
-    
+    [inTableView beginUpdates];
+
     // Process moves
     for (NSUInteger i = 0; i < [newList count]; i++) {
-        NSDictionary *candidateObject = newList[i];
+        NSString *candidateObject = newList[i];
+        NSString *candidateKey = [candidateObject valueForKey:inKey];
         
-        if ([deleteSet containsObject:candidateObject] == NO &&
-            [insertSet containsObject:candidateObject] == NO) {
-            NSUInteger oldIndex = [oldList indexOfObject:candidateObject];
-            NSUInteger newIndex = [newList indexOfObject:candidateObject];
+        if ([deleteSet containsObject:candidateKey] == NO &&
+            [insertSet containsObject:candidateKey] == NO) {
+            NSUInteger oldIndex = [oldList indexOfObject:[oldMap objectForKey:candidateKey]];
+            NSUInteger newIndex = [newList indexOfObject:[newMap objectForKey:candidateKey]];
+
+            
             NSIndexPath *oldIndexPath = [NSIndexPath indexPathForRow:(NSInteger)oldIndex + offset inSection:0];
             NSIndexPath *newIndexPath = [NSIndexPath indexPathForRow:(NSInteger)newIndex + offset inSection:0];
             
             if (oldIndex != newIndex) {
-                NSLog(@"MOVE row at %@ to %@", oldIndexPath, newIndexPath);
-                [self.dynamicTableView moveRowAtIndexPath:oldIndexPath toIndexPath:newIndexPath];
+//                NSLog(@"MOVE row at %@ to %@", oldIndexPath, newIndexPath);
+                [inTableView moveRowAtIndexPath:oldIndexPath toIndexPath:newIndexPath];
             }
         }
     }
-    [self.dynamicTableView endUpdates];
+
+    // Process deletes
+    for (NSString *deleteKey in deleteSet) {
+        NSUInteger index = [oldList indexOfObject:[oldMap objectForKey:deleteKey]];
+        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:(NSInteger)index + offset inSection:0];
+        NSParameterAssert(index != NSNotFound);
+
+//        NSLog(@"DELETE row at %@", [NSArray arrayWithObject:indexPath]);
+        [inTableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
+    }
+    
+    // Process inserts
+    for (NSString *insertKey in insertSet) {
+        NSUInteger index = [newList indexOfObject:[newMap objectForKey:insertKey]];
+        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:(NSInteger)index + offset inSection:0];
+        NSParameterAssert(index != NSNotFound);
+
+//        NSLog(@"INSERT row at %@", [NSArray arrayWithObject:indexPath]);
+        [inTableView insertRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
+    }
+    
+    [inTableView endUpdates];
 }
 
 #pragma mark - UITableViewDataSource Methods
